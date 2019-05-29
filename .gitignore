@@ -1,2 +1,4 @@
 web/data/*.csv
 web/.venv
+.vscode
+__pycache__
