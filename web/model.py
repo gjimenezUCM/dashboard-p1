@@ -1,56 +1,93 @@
 import pandas as pd 
 import plotly.graph_objs as go
 from repo import Repo
+from discord import Discord
 
 COMMITS_FILENAME = 'data/commits.csv'
+DISCORD_FILENAME = 'data/discord.csv'
 
-dfCommits = pd.read_csv(COMMITS_FILENAME)
-dfCommits.date = pd.to_datetime(dfCommits.date)
-dfCommits.set_index("date", inplace=True)
+class CommitModel:
+    def __init__(self):
+        self.dfCommits = pd.read_csv(COMMITS_FILENAME)
+        self.dfCommits.date = pd.to_datetime(self.dfCommits.date)
+        self.dfCommits.set_index("date", inplace=True)
 
-byRepo = dfCommits.groupby(by=["repo"]).count()
-byRepo.sort_values(by="author", ascending=False)
+        byRepo = self.dfCommits.groupby(by=["repo"]).count()
+        byRepo.sort_values(by="author", ascending=False)
 
-"""
-byAuthor = dfCommits.groupby(by=["repo","login"]).count()
-byAuthor.reset_index(inplace=True)
-byAuthor.drop(byAuthor.columns[4:], axis=1, inplace=True)
-byAuthor.columns = ["repo", "author", "numCommits", "Ratio in repo"]
-byAuthor["Ratio in repo"] = byAuthor.apply(lambda row: row.numCommits/ byRepo.loc[row.repo], axis=1)
-byAuthor.sort_values(by="Ratio in repo", ascending=False)
-"""
-repos = byRepo.index.values
+        self.repos = byRepo.index.values
 
-repoFigures = {}
-for repoName in repos:
-    repoFigures[repoName] = Repo(repoName, dfCommits)
-
-print("loaded")
-
-def repoOptions():
-    return [{'label': repo, 'value': repo} for repo in repos]
+        self.repoFigures = {}
+        for repoName in self.repos:
+            self.repoFigures[repoName] = Repo(repoName, self.dfCommits)
 
 
-def authorOptions(repoName):
-    repoInfo = repoFigures[repoName]
-    options = [{'label': author, 'value': author} for author in repoInfo.authors]
-    options.append({'label': 'Todos', 'value': 'Todos'})
-    return options
+    def repoOptions(self):
+        return [{'label': repo, 'value': repo} for repo in self.repos]
 
-def figAuthorDistribution(repoName):
-    return repoFigures[repoName].figAuthorDistribution
 
-def commitsByDay(repoName):
-    return repoFigures[repoName].figCommitsByDay
+    def authorOptions(self,repoName):
+        repoInfo = self.repoFigures[repoName]
+        options = [{'label': author, 'value': author} for author in repoInfo.authors]
+        options.append({'label': 'Todos', 'value': 'Todos'})
+        return options
 
-def selectAll(repoName):
-    repoFigures[repoName].selectAll()
+    def figAuthorDistribution(self,repoName):
+        return self.repoFigures[repoName].figAuthorDistribution
 
-def selectAuthor(repoName,authorName):
-    repoFigures[repoName].selectAuthor(authorName)
+    def commitsByDay(self,repoName):
+        return self.repoFigures[repoName].figCommitsByDay
 
-def nCommits(repoName):
-    return repoFigures[repoName].nCommits   
+    def selectAll(self,repoName):
+        self.repoFigures[repoName].selectAll()
 
-def nBranches(repoName):
-    return repoFigures[repoName].nBranches 
+    def selectAuthor(self,repoName,authorName):
+        self.repoFigures[repoName].selectAuthor(authorName)
+
+    def nCommits(self,repoName):
+        return self.repoFigures[repoName].nCommits   
+
+    def nBranches(self,repoName):
+        return self.repoFigures[repoName].nBranches 
+
+
+class DiscordModel:
+    def __init__(self):
+        self.dfMsgs = pd.read_csv(DISCORD_FILENAME)
+        self.dfMsgs["date"] = pd.to_datetime(self.dfMsgs.ts)
+        self.dfMsgs.set_index("date", inplace=True)
+
+        byChannel = self.dfMsgs.groupby(by=["channelName"]).count()
+        byChannel.sort_values(by="authorname", ascending=False)
+
+        self.channels = byChannel.index.values
+
+        self.channelFigures = {}
+        for channelName in self.channels:
+            self.channelFigures[channelName] = Discord(channelName, self.dfMsgs)
+
+
+    def channelOptions(self):
+        return [{'label': repo, 'value': repo} for repo in self.channels]
+
+
+    def authorOptions(self,channelName):
+        repoInfo = self.channelFigures[channelName]
+        options = [{'label': author, 'value': author} for author in repoInfo.authors]
+        options.append({'label': 'Todos', 'value': 'Todos'})
+        return options
+
+    def figAuthorDistribution(self,channelName):
+        return self.channelFigures[channelName].figAuthorDistribution
+
+    def msgsByDay(self,channelName):
+        return self.channelFigures[channelName].figMsgsByDay
+
+    def selectAll(self,channelName):
+        self.channelFigures[channelName].selectAll()
+
+    def selectAuthor(self,channelName,authorName):
+        self.channelFigures[channelName].selectAuthor(authorName)
+
+    def nMsgs(self,channelName):
+        return self.channelFigures[channelName].nMsgs  
